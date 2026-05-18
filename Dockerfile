@@ -7,15 +7,15 @@ FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 
 # Copiamos solo el pom.xml primero para cachear dependencias Maven
-COPY Springboot-API-REST-DESPACHO/pom.xml ./pom.xml
-COPY Springboot-API-REST-DESPACHO/.mvn ./.mvn
-COPY Springboot-API-REST-DESPACHO/mvnw ./mvnw
+COPY pom.xml ./pom.xml
+COPY .mvn ./.mvn
+COPY mvnw ./mvnw
 
 # Descargamos dependencias (se cachean si pom.xml no cambia)
 RUN chmod +x mvnw && ./mvnw dependency:go-offline -q
 
 # Copiamos el código fuente
-COPY Springboot-API-REST-DESPACHO/src ./src
+COPY src ./src
 
 # Compilamos y empaquetamos (sin tests para agilizar el build)
 RUN ./mvnw package -DskipTests -q

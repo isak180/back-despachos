@@ -39,18 +39,9 @@ jobs:
           echo "IMAGE=$ECR_REGISTRY/$ECR_REPO:latest" >> $GITHUB_ENV
 
       - name: Deploy en EC2 Backend (subred privada via SSM)
-        uses: aws-actions/aws-ssm-send-command@v1
-        with:
-          instance-ids: ${{ secrets.EC2_BACKEND_INSTANCE_ID }}
-          comment: "Deploy backend despachos"
-          document-name: "AWS-RunShellScript"
-          parameters: |
-            {
-              "commands": [
-                "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
-                "docker pull ${{ env.IMAGE }}",
-                "docker stop backend-despachos || true",
-                "docker rm backend-despachos || true",
-                "docker run -d --name backend-despachos --restart unless-stopped -p 8080:8080 -e DB_HOST=${{ secrets.DB_HOST }} -e DB_PORT=3306 -e DB_NAME=${{ secrets.DB_NAME }} -e DB_USER=${{ secrets.DB_USER }} -e DB_PASS=${{ secrets.DB_PASS }} -e CORS_ALLOWED_ORIGINS=${{ secrets.FRONTEND_URL }} ${{ env.IMAGE }}"
-              ]
-            }
+        run: |
+          aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_BACKEND_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy backend despachos" \
+            --parameters '{"commands":["aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}", "docker pull ${{ env.IMAGE }}", "docker stop backend-despachos || true", "docker rm backend-despachos || true", "docker run -d --name backend-despachos --restart unless-stopped -p 8080:8080 -e DB_HOST=${{ secrets.DB_HOST }} -e DB_PORT=3306 -e DB_NAME=${{ secrets.DB_NAME }} -e DB_USER=${{ secrets.DB_USER }} -e DB_PASS=${{ secrets.DB_PASS }} -e CORS_ALLOWED_ORIGINS=${{ secrets.FRONTEND_URL }} ${{ env.IMAGE }}"]}'
